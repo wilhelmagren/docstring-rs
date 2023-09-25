@@ -2,8 +2,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::{io, io::Write};
 
-use env_logger;
-
 use log::{error, info, warn};
 
 use text_io::read;
@@ -107,7 +105,7 @@ fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
         Err(e) => return Err(e),
     };
 
-    match fs::copy(&tmp_path, &path) {
+    match fs::copy(&tmp_path, path) {
         Ok(_) => info!(
             "Copied contents from `{}` to `{}`",
             &tmp_path.display(),
@@ -126,12 +124,12 @@ fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
 
 ///
 fn add_to_new_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
-    match fs::write(&path, data) {
+    match fs::write(path, data) {
         Ok(_) => {
             info!("Wrote docstring contents to file: `{}`", &path.display());
             Ok(())
         }
-        Err(e) => return Err(e),
+        Err(e) => Err(e),
     }
 }
 
@@ -158,9 +156,9 @@ fn read_docstring_from_file(path: &Path) -> Result<Vec<u8>, io::Error> {
     match fs::read(path) {
         Ok(docstring) => {
             info!("Read contents of `{}` successfully", &path.display());
-            return Ok(docstring);
-        }
-        Err(e) => return Err(e),
+            Ok(docstring)
+        },
+        Err(e) => Err(e)
     }
 }
 
@@ -182,7 +180,7 @@ fn main() -> Result<(), io::Error> {
     let file_name = Path::new(&args.file_name);
     let license = Path::new(&args.license);
 
-    let docstring: Vec<u8> = match read_docstring_from_file(&license) {
+    let docstring: Vec<u8> = match read_docstring_from_file(license) {
         Ok(d) => d,
         Err(e) => {
             error!(
@@ -203,7 +201,7 @@ fn main() -> Result<(), io::Error> {
             &directory.display()
         );
 
-        match create_directory(&directory) {
+        match create_directory(directory) {
             Ok(()) => info!("Successfully created directory!"),
             Err(e) => {
                 error!(
@@ -218,7 +216,7 @@ fn main() -> Result<(), io::Error> {
 
     if target_path.exists() {
         warn!("Target file already exists, will prepend to top of file...");
-        match prepend_to_file(&docstring[..], &target_path) {
+        match prepend_to_file(&docstring[..], target_path) {
             Ok(_) => (),
             Err(e) => {
                 error!(
@@ -230,7 +228,7 @@ fn main() -> Result<(), io::Error> {
             }
         };
     } else {
-        match add_to_new_file(&docstring[..], &target_path) {
+        match add_to_new_file(&docstring[..], target_path) {
             Ok(_) => (),
             Err(e) => {
                 error!(
