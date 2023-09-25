@@ -157,8 +157,8 @@ fn read_docstring_from_file(path: &Path) -> Result<Vec<u8>, io::Error> {
         Ok(docstring) => {
             info!("Read contents of `{}` successfully", &path.display());
             Ok(docstring)
-        },
-        Err(e) => Err(e)
+        }
+        Err(e) => Err(e),
     }
 }
 
