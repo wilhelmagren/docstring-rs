@@ -25,3 +25,10 @@ lint:
 .PHONY: coverage
 coverage:
 	cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+.PHONY: run
+run:
+	./target/release/docstring
+
+.PHONY: clean-run
+clean-run: clean release run
