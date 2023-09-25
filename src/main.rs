@@ -1,5 +1,5 @@
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::{io, io::Write};
 
 use text_io::read;
@@ -14,7 +14,7 @@ struct Args {
     #[arg(short = 'd', long = "directory", required = true)]
     directory: String,
 
-    /// Name of the new file to create with docstring as 
+    /// Name of the new file to create with docstring as
     /// header. If it already exists, asks user whether
     /// to prepend the docstring to the file.
     #[arg(short = 'f', long = "file", required = true)]
@@ -23,7 +23,12 @@ struct Args {
     /// Relative path to the LICENSE file to use in header
     /// docstring. If not specified, expects a LICENSE file
     /// to exist in the current working directory.
-    #[arg(short = 'l', long = "license", required = false, default_value = "LICENSE")]
+    #[arg(
+        short = 'l',
+        long = "license",
+        required = false,
+        default_value = "LICENSE"
+    )]
     license: String,
 }
 
@@ -40,7 +45,11 @@ fn get_args_from_cli() -> Args {
     println!("Path to the LICENSE file to include in docstring: ");
     let l: String = read!();
 
-    Args { directory: d, file_name: f, license: l }
+    Args {
+        directory: d,
+        file_name: f,
+        license: l,
+    }
 }
 
 ///
@@ -57,13 +66,11 @@ fn prepend_to_file(data: &[u8], path: &Path) -> io::Result<()> {
     fs::write(&tmp_path, data)?;
 
     let contents = fs::read(path)?;
-    let mut tmp = fs::OpenOptions::new()
-        .append(true)
-        .open(&tmp_path)?;
+    let mut tmp = fs::OpenOptions::new().append(true).open(&tmp_path)?;
 
     tmp.write_all(&contents[..])?;
     fs::copy(&tmp_path, &path)?;
-    
+
     fs::remove_file(&tmp_path)?;
 
     Ok(())
@@ -77,11 +84,14 @@ fn main() {
     let args = match Args::try_parse() {
         Ok(a) => a,
         Err(e) => {
-            println!("Could not parse CLI args from std::env due to `{:?}`.", e.kind());
+            println!(
+                "Could not parse CLI args from std::env due to `{:?}`.",
+                e.kind()
+            );
             get_args_from_cli()
-        },
+        }
     };
-    
+
     let directory = Path::new(&args.directory);
     let file_name = Path::new(&args.file_name);
     let license = Path::new(&args.license);
@@ -91,12 +101,16 @@ fn main() {
     println!("{:?}", target_path.exists());
 
     if !directory.exists() {
-        println!("Directory {} does not already exist, creating it...", &directory.display());
+        println!(
+            "Directory {} does not already exist, creating it...",
+            &directory.display()
+        );
         match fs::create_dir(directory) {
             Ok(()) => println!("Successfully created directory."),
             Err(e) => panic!(
                 "Could not create directory `{}` due to `{:?}`",
-                &directory.display(), e
+                &directory.display(),
+                e
             ),
         };
     }
