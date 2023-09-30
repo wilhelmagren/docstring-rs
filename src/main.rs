@@ -198,9 +198,9 @@ fn find_filetype(file: &String) -> Result<FileType, io::Error> {
         Some(ft) => ft,
         None => {
             return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "could not find a file ending"
-                    ));
+                io::ErrorKind::NotFound,
+                "could not find a file ending",
+            ));
         }
     };
 
@@ -215,9 +215,9 @@ fn find_filetype(file: &String) -> Result<FileType, io::Error> {
         "TS" => Ok(FileType::TS),
         "JAVA" => Ok(FileType::JAVA),
         _ => Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "no matching filetype"
-                )),
+            io::ErrorKind::NotFound,
+            "no matching filetype",
+        )),
     }
 }
 
@@ -269,7 +269,7 @@ fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u
     docstring.push_str(created_date);
     docstring.push('\n');
     docstring.push_str(ml_comment);
-    
+
     let mut last_updated = String::new();
     last_updated.push_str("Last updated: ");
     last_updated.push_str(local.as_str());
@@ -281,7 +281,6 @@ fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u
 
     docstring.as_bytes().to_vec()
 }
-
 
 fn main() -> Result<(), io::Error> {
     env_logger::init();
@@ -324,8 +323,6 @@ fn main() -> Result<(), io::Error> {
             return Err(e);
         }
     };
-
-    
 
     let path_builder: PathBuf = directory.join(file_name);
     let target_path = Path::new(&path_builder);
