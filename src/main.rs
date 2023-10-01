@@ -1,18 +1,18 @@
 /*
 * MIT License
-* 
+*
 * Copyright (c) 2023 Wilhelm Ågren
-* 
+*
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
 * in the Software without restriction, including without limitation the rights
 * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 * copies of the Software, and to permit persons to whom the Software is
 * furnished to do so, subject to the following conditions:
-* 
+*
 * The above copyright notice and this permission notice shall be included in all
 * copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,11 +20,10 @@
 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
-* 
+*
 * File created: 2023-09-30
 * Last updated: 2023-09-30
 */
-
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::{io, io::Write};
@@ -34,8 +33,6 @@ use log::{error, info, warn};
 use text_io::read;
 
 use clap::Parser;
-
-use chrono;
 
 ///
 #[derive(Parser, Debug)]
@@ -193,35 +190,17 @@ fn read_docstring_from_file(path: &Path) -> Result<String, io::Error> {
 
 enum FileType {
     C,
-    CPP,
+    Cpp,
     RS,
     PY,
     JS,
     TS,
-    JAVA,
+    Java,
 }
-
-/*
-struct Docstring {
-    path: Path,
-    contents: Option<String>,
-    filetype: FileType,
-}
-
-impl Docstring {
-    fn new(path: &Path, contents: String, filetype: FileType) -> Self {
-        Docstring {
-            path: path,
-            contents: Some(contents),
-            filetype: filetype,
-        }
-    }
-}
-*/
 
 ///
-fn find_filetype(file: &String) -> Result<FileType, io::Error> {
-    let file_type = match file.split(".").last() {
+fn find_filetype(file: &str) -> Result<FileType, io::Error> {
+    let file_type = match file.split('.').last() {
         Some(ft) => ft,
         None => {
             return Err(io::Error::new(
@@ -233,14 +212,14 @@ fn find_filetype(file: &String) -> Result<FileType, io::Error> {
 
     match file_type {
         "c" => Ok(FileType::C),
-        "cc" => Ok(FileType::CPP),
-        "cpp" => Ok(FileType::CPP),
-        "cxx" => Ok(FileType::CPP),
+        "cc" => Ok(FileType::Cpp),
+        "cpp" => Ok(FileType::Cpp),
+        "cxx" => Ok(FileType::Cpp),
         "rs" => Ok(FileType::RS),
         "PY" => Ok(FileType::PY),
         "JS" => Ok(FileType::JS),
         "TS" => Ok(FileType::TS),
-        "JAVA" => Ok(FileType::JAVA),
+        "JAVA" => Ok(FileType::Java),
         _ => Err(io::Error::new(
             io::ErrorKind::NotFound,
             "no matching filetype",
@@ -252,12 +231,12 @@ fn find_filetype(file: &String) -> Result<FileType, io::Error> {
 fn get_multiline_comment_by_filetype(ft: &FileType) -> (&'static str, &'static str, &'static str) {
     match ft {
         FileType::C => ("/*", "* ", "*/"),
-        FileType::CPP => ("/*", "* ", "*/"),
+        FileType::Cpp => ("/*", "* ", "*/"),
         FileType::RS => ("/*", "* ", "*/"),
         FileType::PY => (r#"""#, "", r#"""#),
         FileType::JS => ("/*", "* ", "*/"),
         FileType::TS => ("/*", "* ", "*/"),
-        FileType::JAVA => ("/*", "* ", "*/"),
+        FileType::Java => ("/*", "* ", "*/"),
     }
 }
 
@@ -268,12 +247,12 @@ fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u
     docstring.push_str(ml_start);
     docstring.push('\n');
 
-    for line in contents.split("\n") {
+    for line in contents.split('\n') {
         docstring.push_str(ml_comment);
         docstring.push_str(line);
         docstring.push('\n');
     }
-    
+
     docstring.push_str(ml_comment);
     let local: String = chrono::Local::now().format("%Y-%m-%d").to_string();
 
@@ -363,7 +342,7 @@ fn main() -> Result<(), io::Error> {
     if target_path.exists() {
         warn!("Target file already exists, will prepend to top of file...");
         let metadata = fs::metadata(target_path).unwrap();
-        let t_created: chrono::DateTime<chrono::Local> = metadata.created().unwrap().clone().into();
+        let t_created: chrono::DateTime<chrono::Local> = metadata.created().unwrap().into();
         let b_created = t_created.format("%Y-%m-%d").to_string();
         created = b_created.as_str();
         let docstring: Vec<u8> = format_docstring(contents, filetype, created);
