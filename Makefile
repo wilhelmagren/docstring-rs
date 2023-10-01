@@ -30,5 +30,9 @@ coverage:
 run:
 	./target/release/docstring
 
+.PHONY: publish-dry
+publish-dry:
+	cargo publish --dry-run
+
 .PHONY: clean-run
 clean-run: clean release run
