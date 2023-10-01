@@ -1,7 +1,18 @@
 [package]
 name = "docstring"
 version = "0.2.0"
+authors = [ "Wilhelm Ågren <wilhelmagren98@gmail.com>" ]
+description = "📒 Generate or update docstrings for new and existing files. "
+readme = "README.md"
+homepage = "https://github.com/wilhelmagren/docstring-rs"
+repository = "https://github.com/wilhelmagren/docstring-rs"
+license-file = "LICENSE"
 edition = "2021"
+keywords = [ "rust", "cli", "documentation", "automation" ]
+categories = [ "command-line-utilities" ]
+include = [ "src/" ]
+publish = [ "crates.io" ]
+default-run = "docstring"
 
 [dependencies]
 chrono = "0.4.31"
