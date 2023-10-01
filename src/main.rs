@@ -35,6 +35,11 @@ use text_io::read;
 
 use clap::Parser;
 
+mod comment;
+mod filetype;
+
+use comment::CommentStyle;
+
 ///
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
