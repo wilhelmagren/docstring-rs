@@ -27,13 +27,14 @@
 
 use std::collections::HashMap;
 use std::io;
+use std::fmt;
 
-use once_cell::sync::{Lazy, OnceCell};
+use once_cell::sync::Lazy;
 
 use crate::*;
 
 ///
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FileType {
     C,
     CPP,
@@ -67,6 +68,52 @@ pub enum FileType {
     Zig,
 }
 
+///
+/// fn main() {
+///     let ft = FileType::HolyC;
+///     println!("{}", ft);
+/// }
+///
+/// >>> "HolyC"
+///
+impl fmt::Display for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use filetype::FileType::*;
+        match self {
+            C => write!(f, "C"),
+            CPP => write!(f, "C++"),
+            CSharp => write!(f, "C#"),
+            Cython => write!(f, "Cython"),
+            Elixir => write!(f, "Elixir"),
+            Erlang => write!(f, "Erlang"),
+            FSharp => write!(f, "FSharp"),
+            Go => write!(f, "Go"),
+            Haskell => write!(f, "Haskell"),
+            HolyC => write!(f, "HolyC"),
+            Java => write!(f, "Java"),
+            JavaScript => write!(f, "JavaScript"),
+            Julia => write!(f, "Julia"),
+            Kotlin => write!(f, "Kotlin"),
+            Lisp => write!(f, "Lisp"),
+            Lua => write!(f, "Lua"),
+            Perl => write!(f, "Perl"),
+            PHP => write!(f, "PHP"),
+            PowerShell => write!(f, "PowerShell"),
+            Prolog => write!(f, "Prolog"),
+            Python => write!(f, "Python"),
+            QSharp => write!(f, "QSharp"),
+            R => write!(f, "R"),
+            Ruby => write!(f, "Ruby"),
+            Rust => write!(f, "Rust"),
+            Scala => write!(f, "Scala"),
+            Swift => write!(f, "Swift"),
+            TypeScript => write!(f, "TypeScript"),
+            Vim => write!(f, "Vim"),
+            Zig => write!(f, "Zig"),
+        }
+    }
+}
+
 static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
     let mut m = HashMap::new();
     m.insert("c", FileType::C);
@@ -95,7 +142,7 @@ static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
     m.insert("hs", FileType::Haskell);
     m.insert("lhs", FileType::Haskell);
 
-    /// RIP Terry A. Davis
+    // RIP Terry A. Davis
     m.insert("HC", FileType::HolyC);
 
     m.insert("java", FileType::Java);
@@ -174,9 +221,9 @@ static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
 
 ///
 impl FileType {
-    pub fn try_from_filename(fname: &str) -> Result<Self, io::Error> {
-        let ft: &str = match fname.split('.').last() {
-            Some(t) => t,
+    pub fn try_from_filename(fname: &str) -> Result<FileType, io::Error> {
+        let fe: &str = match fname.split('.').last() {
+            Some(e) => e,
             None => {
                 return Err(io::Error::new(
                     io::ErrorKind::NotFound,
@@ -185,107 +232,9 @@ impl FileType {
             }
         };
 
-        match ft {
-            "c" => Ok( FileType::C ),
-
-            "cc" => Ok( FileType::CPP ),
-            "cpp" => Ok( FileType::CPP ),
-            "cxx" => Ok( FileType::CPP ),
-
-            "cs" => Ok( FileType::CSharp ),
-
-            "pyx" => Ok( FileType::Cython ),
-
-            "ex" => Ok( FileType::Elixir ),
-            "exs" => Ok( FileType::Elixir ),
-
-            "erl" => Ok( FileType::Erlang ),
-            "hrl" => Ok( FileType::Erlang ),
-
-            "fs" => Ok( FileType::FSharp ),
-            "fsi" => Ok( FileType::FSharp ),
-            "fsx" => Ok( FileType::FSharp ),
-            "fsscript" => Ok( FileType::FSharp ),
-
-            "go" => Ok( FileType::Go ),
-
-            "hs" => Ok( FileType::Haskell ),
-            "lhs" => Ok( FileType::Haskell ),
-
-            "HC" => Ok( FileType::HolyC ),
-
-            "java" => Ok( FileType::Java ),
-
-            "js" => Ok( FileType::JavaScript ),
-
-            "jl" => Ok( FileType::Julia ),
-
-            "kt" => Ok( FileType::Kotlin ),
-            "kts" => Ok( FileType::Kotlin ),
-
-            "lisp" => Ok( FileType::Lisp ),
-            "lsp" => Ok( FileType::Lisp ),
-            "l" => Ok( FileType::Lisp ),
-            "cl" => Ok( FileType::Lisp ),
-            "fasl" => Ok( FileType::Lisp ),
-
-            "lua" => Ok( FileType::Lua ),
-
-            "plx" => Ok( FileType::Perl ),
-            "pm" => Ok( FileType::Perl ),
-            "xs" => Ok( FileType::Perl ),
-            "t" => Ok( FileType::Perl ),
-            "pod" => Ok( FileType::Perl ),
-            "cgi" => Ok( FileType::Perl ),
-
-            "php" => Ok( FileType::PHP ),
-            "phar" => Ok( FileType::PHP ),
-            "phtml" => Ok( FileType::PHP ),
-            "pht" => Ok( FileType::PHP ),
-            "phps" => Ok( FileType::PHP ),
-
-            "ps1" => Ok( FileType::PowerShell ),
-            "psc1" => Ok( FileType::PowerShell ),
-            "pssc" => Ok( FileType::PowerShell ),
-
-            "pl" => Ok( FileType::Prolog ),
-            "pro" => Ok( FileType::Prolog ),
-            "P" => Ok( FileType::Prolog ),
-
-            "py" => Ok( FileType::Python ),
-            "pyi" => Ok( FileType::Python ),
-            "pyc" => Ok( FileType::Python ),
-            "pyd" => Ok( FileType::Python ),
-            "pyw" => Ok( FileType::Python ),
-            "pyz" => Ok( FileType::Python ),
-
-            "qs" => Ok( FileType::QSharp ),
-
-            "r" => Ok( FileType::R ),
-            "rdata" => Ok( FileType::R ),
-            "rds" => Ok( FileType::R ),
-
-            "rb" => Ok( FileType::Ruby ),
-
-            "rs" => Ok( FileType::Rust ),
-
-            "scala" => Ok( FileType::Scala ),
-            "sc" => Ok( FileType::Scala ),
-
-            "swift" => Ok( FileType::Swift ),
-            "SWIFT" => Ok( FileType::Swift ),
-
-            "ts" => Ok( FileType::TypeScript ),
-            "tsx" => Ok( FileType::TypeScript ),
-            "mts" => Ok( FileType::TypeScript ),
-            "cts" => Ok( FileType::TypeScript ),
-
-            "vim" => Ok( FileType::Vim ),
-
-            "zig" => Ok( FileType::Zig ),
-            "zir" => Ok( FileType::Zig ),
-
-            _ => Err(io::Error::new(
+        match FILE2TYPE.get(fe) {
+            Some(ft) => Ok(*ft),
+            None => Err(io::Error::new(
                 io::ErrorKind::NotFound,
                 "no matching filetype",
             )),
@@ -336,17 +285,37 @@ impl FileType {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{FileType, CommentStyle, FILE2TYPE, io};
 
     #[test]
-    fn fail_try_from_filename() {
+    fn try_from_filename_error() {
         let expected = Err(io::ErrorKind::NotFound);
-        let result = FileType::try_from_filename("_lol.kebab");
+        let result = FileType::try_from_filename("_lol__haha.kebab")
+            .map_err(|e| e.kind());
         assert_eq!(expected, result);
     }
 
     #[test]
-    fn success_try_from_filename() {
-        let filenames: Vec<&str> = vec!["c", "", ""];
+    fn try_from_filename_ok_all() {
+        for file_ending in FILE2TYPE.keys() {
+            let expected = FILE2TYPE.get(file_ending).unwrap();
+            let result = FileType::try_from_filename(file_ending).unwrap();
+            assert_eq!(expected, &result);
+        }
+    }
+
+    #[test]
+    fn get_comment_style() {
+        let ft = FileType::Kotlin;
+        let cs: CommentStyle = ft.get_comment_style();
+        assert_eq!(cs.start(), "/*");
+        assert_eq!(cs.normal(), "* ");
+        assert_eq!(cs.end(), "*/");
+
+        let ft = FileType::Lisp;
+        let cs: CommentStyle = ft.get_comment_style();
+        assert_eq!(cs.start(), ";;;;");
+        assert_eq!(cs.normal(), ";;;; ");
+        assert_eq!(cs.end(), ";;;;");
     }
 }
