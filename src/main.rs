@@ -35,6 +35,12 @@ use text_io::read;
 
 use clap::Parser;
 
+mod comment;
+mod filetype;
+
+use comment::CommentStyle;
+use filetype::FileType;
+
 ///
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -189,61 +195,13 @@ fn read_docstring_from_file(path: &Path) -> Result<String, io::Error> {
     }
 }
 
-enum FileType {
-    C,
-    Cpp,
-    RS,
-    PY,
-    JS,
-    TS,
-    Java,
-}
-
-///
-fn find_filetype(file: &str) -> Result<FileType, io::Error> {
-    let file_type = match file.split('.').last() {
-        Some(ft) => ft,
-        None => {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "could not find a file ending",
-            ));
-        }
-    };
-
-    match file_type {
-        "c" => Ok(FileType::C),
-        "cc" => Ok(FileType::Cpp),
-        "cpp" => Ok(FileType::Cpp),
-        "cxx" => Ok(FileType::Cpp),
-        "rs" => Ok(FileType::RS),
-        "py" => Ok(FileType::PY),
-        "js" => Ok(FileType::JS),
-        "ts" => Ok(FileType::TS),
-        "java" => Ok(FileType::Java),
-        _ => Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "no matching filetype",
-        )),
-    }
-}
-
-///
-fn get_multiline_comment_by_filetype(ft: &FileType) -> (&'static str, &'static str, &'static str) {
-    match ft {
-        FileType::C => ("/*", "* ", "*/"),
-        FileType::Cpp => ("/*", "* ", "*/"),
-        FileType::RS => ("/*", "* ", "*/"),
-        FileType::PY => ("\"\"\"", "", "\"\"\""),
-        FileType::JS => ("/*", "* ", "*/"),
-        FileType::TS => ("/*", "* ", "*/"),
-        FileType::Java => ("/*", "* ", "*/"),
-    }
-}
-
 ///
 fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u8> {
-    let (ml_start, ml_comment, ml_end) = get_multiline_comment_by_filetype(&ft);
+    let style = ft.get_comment_style();
+    let ml_start = style.start();
+    let ml_comment = style.normal();
+    let ml_end = style.end();
+
     let mut docstring = String::new();
     docstring.push_str(ml_start);
     docstring.push('\n');
@@ -304,7 +262,7 @@ fn main() -> Result<(), io::Error> {
         }
     };
 
-    let filetype: FileType = match find_filetype(&args.file_name) {
+    let filetype: FileType = match FileType::try_from_filename(&args.file_name) {
         Ok(f) => f,
         Err(e) => {
             error!(
