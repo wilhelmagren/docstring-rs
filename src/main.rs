@@ -1,3 +1,29 @@
+/*
+* MIT License
+*
+* Copyright (c) 2023 Wilhelm Ågren
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in all
+* copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+* SOFTWARE.
+*
+* File created: 2023-09-30
+* Last updated: 2023-09-30
+*/
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::{io, io::Write};
@@ -152,14 +178,99 @@ fn create_directory(dir: &Path) -> Result<(), io::Error> {
 }
 
 ///
-fn read_docstring_from_file(path: &Path) -> Result<Vec<u8>, io::Error> {
-    match fs::read(path) {
+fn read_docstring_from_file(path: &Path) -> Result<String, io::Error> {
+    match fs::read_to_string(path) {
         Ok(docstring) => {
             info!("Read contents of `{}` successfully", &path.display());
             Ok(docstring)
         }
         Err(e) => Err(e),
     }
+}
+
+enum FileType {
+    C,
+    Cpp,
+    RS,
+    PY,
+    JS,
+    TS,
+    Java,
+}
+
+///
+fn find_filetype(file: &str) -> Result<FileType, io::Error> {
+    let file_type = match file.split('.').last() {
+        Some(ft) => ft,
+        None => {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "could not find a file ending",
+            ));
+        }
+    };
+
+    match file_type {
+        "c" => Ok(FileType::C),
+        "cc" => Ok(FileType::Cpp),
+        "cpp" => Ok(FileType::Cpp),
+        "cxx" => Ok(FileType::Cpp),
+        "rs" => Ok(FileType::RS),
+        "PY" => Ok(FileType::PY),
+        "JS" => Ok(FileType::JS),
+        "TS" => Ok(FileType::TS),
+        "JAVA" => Ok(FileType::Java),
+        _ => Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "no matching filetype",
+        )),
+    }
+}
+
+///
+fn get_multiline_comment_by_filetype(ft: &FileType) -> (&'static str, &'static str, &'static str) {
+    match ft {
+        FileType::C => ("/*", "* ", "*/"),
+        FileType::Cpp => ("/*", "* ", "*/"),
+        FileType::RS => ("/*", "* ", "*/"),
+        FileType::PY => (r#"""#, "", r#"""#),
+        FileType::JS => ("/*", "* ", "*/"),
+        FileType::TS => ("/*", "* ", "*/"),
+        FileType::Java => ("/*", "* ", "*/"),
+    }
+}
+
+///
+fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u8> {
+    let (ml_start, ml_comment, ml_end) = get_multiline_comment_by_filetype(&ft);
+    let mut docstring = String::new();
+    docstring.push_str(ml_start);
+    docstring.push('\n');
+
+    for line in contents.split('\n') {
+        docstring.push_str(ml_comment);
+        docstring.push_str(line);
+        docstring.push('\n');
+    }
+
+    docstring.push_str(ml_comment);
+    let local: String = chrono::Local::now().format("%Y-%m-%d").to_string();
+
+    docstring.push_str("File created: ");
+    docstring.push_str(created_date);
+    docstring.push('\n');
+    docstring.push_str(ml_comment);
+
+    let mut last_updated = String::new();
+    last_updated.push_str("Last updated: ");
+    last_updated.push_str(local.as_str());
+
+    docstring.push_str(last_updated.as_str());
+    docstring.push('\n');
+    docstring.push_str(ml_end);
+    docstring.push_str("\n\n");
+
+    docstring.as_bytes().to_vec()
 }
 
 fn main() -> Result<(), io::Error> {
@@ -180,12 +291,24 @@ fn main() -> Result<(), io::Error> {
     let file_name = Path::new(&args.file_name);
     let license = Path::new(&args.license);
 
-    let docstring: Vec<u8> = match read_docstring_from_file(license) {
-        Ok(d) => d,
+    let contents: String = match read_docstring_from_file(license) {
+        Ok(c) => c,
         Err(e) => {
             error!(
                 "Could not read contents from license file `{}` due to `{}`",
                 &license.display(),
+                e
+            );
+            return Err(e);
+        }
+    };
+
+    let filetype: FileType = match find_filetype(&args.file_name) {
+        Ok(f) => f,
+        Err(e) => {
+            error!(
+                "Could not find a filetype in the filename: `{}` due to `{}`",
+                &file_name.display(),
                 e
             );
             return Err(e);
@@ -214,8 +337,15 @@ fn main() -> Result<(), io::Error> {
         };
     }
 
+    let binding = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let mut created: &str = binding.as_str();
     if target_path.exists() {
         warn!("Target file already exists, will prepend to top of file...");
+        let metadata = fs::metadata(target_path).unwrap();
+        let t_created: chrono::DateTime<chrono::Local> = metadata.created().unwrap().into();
+        let b_created = t_created.format("%Y-%m-%d").to_string();
+        created = b_created.as_str();
+        let docstring: Vec<u8> = format_docstring(contents, filetype, created);
         match prepend_to_file(&docstring[..], target_path) {
             Ok(_) => (),
             Err(e) => {
@@ -228,6 +358,7 @@ fn main() -> Result<(), io::Error> {
             }
         };
     } else {
+        let docstring: Vec<u8> = format_docstring(contents, filetype, created);
         match add_to_new_file(&docstring[..], target_path) {
             Ok(_) => (),
             Err(e) => {
