@@ -26,7 +26,7 @@
 */
 
 ///
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct CommentStyle<'a> {
     multi_line_start: &'a str,
     normal_comment: &'a str,
