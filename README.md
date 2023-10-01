@@ -5,8 +5,8 @@
 <p align="center">
 </p>
 </div>
-  
-![Crates.io (latest)](https://img.shields.io/crates/dv/docstring-rs)
+
+![Crates.io (latest)](https://img.shields.io/crates/v/docstring-rs)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/wilhelmagren/docstring-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/wilhelmagren/docstring-rs/actions/workflows/ci.yml)
 [![Tests](https://github.com/wilhelmagren/docstring-rs/actions/workflows/tests.yml/badge.svg)](https://github.com/wilhelmagren/docstring-rs/actions/workflows/tests.yml)
