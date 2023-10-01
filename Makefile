@@ -28,7 +28,7 @@ coverage:
 
 .PHONY: run
 run:
-	./target/release/docstring
+	./target/release/docstring-rs
 
 .PHONY: publish-dry
 publish-dry:
