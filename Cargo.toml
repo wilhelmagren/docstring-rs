@@ -1,5 +1,5 @@
 [package]
-name = "docstring"
+name = "docstring-rs"
 version = "0.2.0"
 authors = [ "Wilhelm Ågren <wilhelmagren98@gmail.com>" ]
 description = "📒 Generate or update docstrings for new and existing files. "
@@ -11,7 +11,7 @@ edition = "2021"
 keywords = [ "rust", "cli", "documentation", "automation" ]
 categories = [ "command-line-utilities" ]
 include = [ "**/*.rs", "Cargo.toml", "LICENSE", "README.md" ]
-default-run = "docstring"
+default-run = "docstring-rs"
 
 [dependencies]
 chrono = "0.4.31"
