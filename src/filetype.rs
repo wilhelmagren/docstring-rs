@@ -139,6 +139,7 @@ static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
     m
 });
 
+#[allow(dead_code)]
 ///
 static TYPE2STYLE: Lazy<HashMap<FileType, CommentStyle>> = Lazy::new(|| {
     let mut m = HashMap::new();
