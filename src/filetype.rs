@@ -26,94 +26,14 @@
 */
 
 use std::collections::HashMap;
-use std::io;
 use std::fmt;
+use std::io;
 
 use once_cell::sync::Lazy;
 
 use crate::*;
 
 ///
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum FileType {
-    C,
-    CPP,
-    CSharp,
-    Cython,
-    Elixir,
-    Erlang,
-    FSharp,
-    Go,
-    Haskell,
-    HolyC,
-    Java,
-    JavaScript,
-    Julia,
-    Kotlin,
-    Lisp,
-    Lua,
-    Perl,
-    PHP,
-    PowerShell,
-    Prolog,
-    Python,
-    QSharp,
-    R,
-    Ruby,
-    Rust,
-    Scala,
-    Swift,
-    TypeScript,
-    Vim,
-    Zig,
-}
-
-///
-/// fn main() {
-///     let ft = FileType::HolyC;
-///     println!("{}", ft);
-/// }
-///
-/// >>> "HolyC"
-///
-impl fmt::Display for FileType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use filetype::FileType::*;
-        match self {
-            C => write!(f, "C"),
-            CPP => write!(f, "C++"),
-            CSharp => write!(f, "C#"),
-            Cython => write!(f, "Cython"),
-            Elixir => write!(f, "Elixir"),
-            Erlang => write!(f, "Erlang"),
-            FSharp => write!(f, "FSharp"),
-            Go => write!(f, "Go"),
-            Haskell => write!(f, "Haskell"),
-            HolyC => write!(f, "HolyC"),
-            Java => write!(f, "Java"),
-            JavaScript => write!(f, "JavaScript"),
-            Julia => write!(f, "Julia"),
-            Kotlin => write!(f, "Kotlin"),
-            Lisp => write!(f, "Lisp"),
-            Lua => write!(f, "Lua"),
-            Perl => write!(f, "Perl"),
-            PHP => write!(f, "PHP"),
-            PowerShell => write!(f, "PowerShell"),
-            Prolog => write!(f, "Prolog"),
-            Python => write!(f, "Python"),
-            QSharp => write!(f, "QSharp"),
-            R => write!(f, "R"),
-            Ruby => write!(f, "Ruby"),
-            Rust => write!(f, "Rust"),
-            Scala => write!(f, "Scala"),
-            Swift => write!(f, "Swift"),
-            TypeScript => write!(f, "TypeScript"),
-            Vim => write!(f, "Vim"),
-            Zig => write!(f, "Zig"),
-        }
-    }
-}
-
 static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
     let mut m = HashMap::new();
     m.insert("c", FileType::C);
@@ -220,6 +140,126 @@ static FILE2TYPE: Lazy<HashMap<&'static str, FileType>> = Lazy::new(|| {
 });
 
 ///
+static TYPE2STYLE: Lazy<HashMap<FileType, CommentStyle>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert(FileType::C, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::CPP, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::CSharp, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Cython, CommentStyle::new("\"\"\"", "", "\"\"\""));
+    m.insert(FileType::Elixir, CommentStyle::new("# ", "# ", "# "));
+    m.insert(FileType::Erlang, CommentStyle::new("%", "% ", "%"));
+    m.insert(FileType::FSharp, CommentStyle::new("(*", "* ", "*)"));
+    m.insert(FileType::Go, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Haskell, CommentStyle::new("{-", "- ", "-}"));
+    m.insert(FileType::HolyC, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Java, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::JavaScript, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Julia, CommentStyle::new("#=", "= ", "=#"));
+    m.insert(FileType::Kotlin, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Lisp, CommentStyle::new(";;;;", ";;;; ", ";;;;"));
+    m.insert(FileType::Lua, CommentStyle::new("--[[", "-- ", "--]]"));
+    m.insert(FileType::Perl, CommentStyle::new("=", "", "=cut"));
+    m.insert(FileType::PHP, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Prolog, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Python, CommentStyle::new("\"\"\"", "", "\"\"\""));
+    m.insert(FileType::QSharp, CommentStyle::new("///", "///", "///"));
+    m.insert(FileType::R, CommentStyle::new("#", "# ", "#"));
+    m.insert(FileType::Ruby, CommentStyle::new("=begin", "", "=end"));
+    m.insert(FileType::Rust, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Scala, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::Swift, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(FileType::TypeScript, CommentStyle::new("/*", "* ", "*/"));
+    m.insert(
+        FileType::Vim,
+        CommentStyle::new("\'\"\'", "\'\"\'", "\'\"\'"),
+    );
+    m.insert(FileType::Zig, CommentStyle::new("/*", "* ", "*/"));
+    m
+});
+
+///
+#[allow(clippy::upper_case_acronyms)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum FileType {
+    C,
+    CPP,
+    CSharp,
+    Cython,
+    Elixir,
+    Erlang,
+    FSharp,
+    Go,
+    Haskell,
+    HolyC,
+    Java,
+    JavaScript,
+    Julia,
+    Kotlin,
+    Lisp,
+    Lua,
+    Perl,
+    PHP,
+    PowerShell,
+    Prolog,
+    Python,
+    QSharp,
+    R,
+    Ruby,
+    Rust,
+    Scala,
+    Swift,
+    TypeScript,
+    Vim,
+    Zig,
+}
+
+///
+/// fn main() {
+///     let ft = FileType::HolyC;
+///     println!("{}", ft);
+/// }
+///
+/// >>> "HolyC"
+///
+impl fmt::Display for FileType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use filetype::FileType::*;
+        match self {
+            C => write!(f, "C"),
+            CPP => write!(f, "C++"),
+            CSharp => write!(f, "C#"),
+            Cython => write!(f, "Cython"),
+            Elixir => write!(f, "Elixir"),
+            Erlang => write!(f, "Erlang"),
+            FSharp => write!(f, "FSharp"),
+            Go => write!(f, "Go"),
+            Haskell => write!(f, "Haskell"),
+            HolyC => write!(f, "HolyC"),
+            Java => write!(f, "Java"),
+            JavaScript => write!(f, "JavaScript"),
+            Julia => write!(f, "Julia"),
+            Kotlin => write!(f, "Kotlin"),
+            Lisp => write!(f, "Lisp"),
+            Lua => write!(f, "Lua"),
+            Perl => write!(f, "Perl"),
+            PHP => write!(f, "PHP"),
+            PowerShell => write!(f, "PowerShell"),
+            Prolog => write!(f, "Prolog"),
+            Python => write!(f, "Python"),
+            QSharp => write!(f, "QSharp"),
+            R => write!(f, "R"),
+            Ruby => write!(f, "Ruby"),
+            Rust => write!(f, "Rust"),
+            Scala => write!(f, "Scala"),
+            Swift => write!(f, "Swift"),
+            TypeScript => write!(f, "TypeScript"),
+            Vim => write!(f, "Vim"),
+            Zig => write!(f, "Zig"),
+        }
+    }
+}
+
+///
 impl FileType {
     pub fn try_from_filename(fname: &str) -> Result<FileType, io::Error> {
         let fe: &str = match fname.split('.').last() {
@@ -285,13 +325,12 @@ impl FileType {
 
 #[cfg(test)]
 mod tests {
-    use super::{FileType, CommentStyle, FILE2TYPE, io};
+    use super::{io, FileType, FILE2TYPE, TYPE2STYLE};
 
     #[test]
     fn try_from_filename_error() {
         let expected = Err(io::ErrorKind::NotFound);
-        let result = FileType::try_from_filename("_lol__haha.kebab")
-            .map_err(|e| e.kind());
+        let result = FileType::try_from_filename("_lol__haha.kebab").map_err(|e| e.kind());
         assert_eq!(expected, result);
     }
 
@@ -305,17 +344,11 @@ mod tests {
     }
 
     #[test]
-    fn get_comment_style() {
-        let ft = FileType::Kotlin;
-        let cs: CommentStyle = ft.get_comment_style();
-        assert_eq!(cs.start(), "/*");
-        assert_eq!(cs.normal(), "* ");
-        assert_eq!(cs.end(), "*/");
-
-        let ft = FileType::Lisp;
-        let cs: CommentStyle = ft.get_comment_style();
-        assert_eq!(cs.start(), ";;;;");
-        assert_eq!(cs.normal(), ";;;; ");
-        assert_eq!(cs.end(), ";;;;");
+    fn get_comment_style_ok_all() {
+        for filetype in TYPE2STYLE.keys() {
+            let expected = TYPE2STYLE.get(filetype).unwrap();
+            let result = filetype.get_comment_style();
+            assert_eq!(expected, &result);
+        }
     }
 }
