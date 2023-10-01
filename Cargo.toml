@@ -10,7 +10,7 @@ license-file = "LICENSE"
 edition = "2021"
 keywords = [ "rust", "cli", "documentation", "automation" ]
 categories = [ "command-line-utilities" ]
-include = [ "src/" ]
+include = [ "**/*.rs", "Cargo.toml", "LICENSE", "README.md" ]
 default-run = "docstring"
 
 [dependencies]
