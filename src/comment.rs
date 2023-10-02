@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-01
-* Last updated: 2023-10-01
+* Last updated: 2023-10-02
 */
 
 ///
@@ -57,7 +57,7 @@ impl<'a> CommentStyle<'a> {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_comment {
     use super::*;
 
     #[test]

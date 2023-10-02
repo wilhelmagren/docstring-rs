@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-01
-* Last updated: 2023-10-01
+* Last updated: 2023-10-02
 */
 
 use std::collections::HashMap;
@@ -325,7 +325,7 @@ impl FileType {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_filetype {
     use super::{io, FileType, FILE2TYPE, TYPE2STYLE};
 
     #[test]
