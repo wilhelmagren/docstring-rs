@@ -1,18 +1,18 @@
 /*
 * MIT License
-* 
+*
 * Copyright (c) 2023 Wilhelm Ågren
-* 
+*
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
 * in the Software without restriction, including without limitation the rights
 * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 * copies of the Software, and to permit persons to whom the Software is
 * furnished to do so, subject to the following conditions:
-* 
+*
 * The above copyright notice and this permission notice shall be included in all
 * copies or substantial portions of the Software.
-* 
+*
 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
-* 
+*
 * File created: 2023-10-02
 * Last updated: 2023-10-02
 */
@@ -43,7 +43,6 @@ pub struct Docstring {
 
 ///
 impl Docstring {
-
     ///
     pub fn new(target: PathBuf, license: PathBuf) -> Self {
         Self {
@@ -71,14 +70,16 @@ impl Docstring {
             if line.contains("File created: ") {
                 let date: String = match re.find(line) {
                     Some(d) => d.as_str().to_owned(),
-                    None => return Err(io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "could not parse date"
-                    )),
+                    None => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "could not parse date",
+                        ))
+                    }
                 };
                 self.file_created = Some(date);
             };
-        };
+        }
 
         Ok(())
     }
@@ -87,7 +88,10 @@ impl Docstring {
     pub fn try_read_license(&mut self) -> Result<(), io::Error> {
         match fs::read_to_string(&self.license_path) {
             Ok(c) => {
-                info!("Read contents of {} successfully", &self.license_path.display());
+                info!(
+                    "Read contents of {} successfully",
+                    &self.license_path.display()
+                );
                 self.contents = Some(c);
                 Ok(())
             }
@@ -101,7 +105,5 @@ mod tests_docstring {
     use super::*;
 
     #[test]
-    fn new_and_read() {
-
-    }
+    fn new_and_read() {}
 }
