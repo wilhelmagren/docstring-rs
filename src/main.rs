@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-09-30
-* Last updated: 2023-10-01
+* Last updated: 2023-10-02
 */
 
 use std::fs;
@@ -31,76 +31,19 @@ use std::{io, io::Write};
 
 use log::{error, info, warn};
 
-use text_io::read;
-
 use clap::Parser;
 
+mod args;
 mod comment;
+mod docstring;
 mod filetype;
+mod tmp;
 
+use args::Args;
 use comment::CommentStyle;
+use docstring::Docstring;
 use filetype::FileType;
-
-///
-#[derive(Parser, Debug)]
-#[command(author, version, about)]
-struct Args {
-    /// Name of the directory in which to create a file,
-    /// if it does not already exist, creates the directory.
-    #[arg(short = 'd', long = "directory", required = true)]
-    directory: String,
-
-    /// Name of the new file to create with docstring as
-    /// header. If it already exists, asks user whether
-    /// to prepend the docstring to the file.
-    #[arg(short = 'f', long = "file", required = true)]
-    file_name: String,
-
-    /// Relative path to the LICENSE file to use in header
-    /// docstring. If not specified, expects a LICENSE file
-    /// to exist in the current working directory.
-    #[arg(
-        short = 'l',
-        long = "license",
-        required = false,
-        default_value = "LICENSE"
-    )]
-    license: String,
-}
-
-/// If the user does not provide the required CLI arguments
-/// they will be prompted for them as the program is running.
-/// Returns the provided arguments as the `Args` struct.
-fn get_args_from_cli() -> Args {
-    info!("Please input the DIRECTORY to create docstring in: ");
-    let d: String = read!();
-
-    info!("Please input the NAME OF FILE to create docstring in: ");
-    let f: String = read!();
-
-    info!("Please input the PATH TO LICENSE FILE to include in docstring: ");
-    let l: String = read!();
-
-    Args {
-        directory: d,
-        file_name: f,
-        license: l,
-    }
-}
-
-///
-fn random_tmp_file_name<'a>() -> &'a str {
-    "hahahatmp.tmp"
-}
-
-///
-fn tmp_file_from_path(path: &Path) -> PathBuf {
-    let tmp_file_name: &str = random_tmp_file_name();
-    match path.parent() {
-        Some(p) => p.join(tmp_file_name),
-        None => PathBuf::from(tmp_file_name),
-    }
-}
+use tmp::tmp_file_from_path;
 
 ///
 fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
@@ -242,7 +185,7 @@ fn main() -> Result<(), io::Error> {
                 "Could not parse CLI args from std::env due to `{:?}`.",
                 e.kind()
             );
-            get_args_from_cli()
+            Args::try_from_user()
         }
     };
 
