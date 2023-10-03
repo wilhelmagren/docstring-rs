@@ -79,7 +79,7 @@ impl Args {
 
     #[allow(dead_code)]
     ///
-    pub fn into_paths(&self) -> (PathBuf, PathBuf, PathBuf) {
+    pub fn paths(&self) -> (PathBuf, PathBuf, PathBuf) {
         (
             PathBuf::from(&self.directory),
             PathBuf::from(&self.file_name),
@@ -105,7 +105,7 @@ mod tests_args {
             file_name: "nn.rs".into(),
             license: "LICENSE".into(),
         };
-        let (d, f, l) = args.into_paths();
+        let (d, f, l) = args.paths();
         assert_eq!(PathBuf::from("src"), d);
         assert_eq!(PathBuf::from("nn.rs"), f);
         assert_eq!(PathBuf::from("LICENSE"), l);
