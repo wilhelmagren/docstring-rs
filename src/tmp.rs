@@ -21,53 +21,37 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 * SOFTWARE.
 *
-* File created: 2023-10-01
+* File created: 2023-10-02
 * Last updated: 2023-10-02
 */
 
-///
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct CommentStyle<'a> {
-    multi_line_start: &'a str,
-    normal_comment: &'a str,
-    multi_line_end: &'a str,
+use std::path::{Path, PathBuf};
+
+use rand::distributions::{Alphanumeric, DistString};
+
+static FILENAMELEN: usize = 16;
+
+/// Generate a pseudo-random string from alphanumerica characters of length
+/// FILENAMELEN.
+fn random_file_name() -> String {
+    Alphanumeric.sample_string(&mut rand::thread_rng(), FILENAMELEN)
 }
 
-///
-impl<'a> CommentStyle<'a> {
-    pub fn new(start: &'a str, normal: &'a str, end: &'a str) -> Self {
-        CommentStyle {
-            multi_line_start: start,
-            normal_comment: normal,
-            multi_line_end: end,
-        }
-    }
-
-    pub fn start(&self) -> &'a str {
-        self.multi_line_start
-    }
-
-    pub fn normal(&self) -> &'a str {
-        self.normal_comment
-    }
-
-    pub fn end(&self) -> &'a str {
-        self.multi_line_end
+/// Create a relative path to a temporary file.
+pub fn tmp_file_from_path(path: &Path) -> PathBuf {
+    let tmp_file_name: String = random_file_name();
+    match path.parent() {
+        Some(p) => p.join(tmp_file_name),
+        None => PathBuf::from(tmp_file_name),
     }
 }
 
 #[cfg(test)]
-mod tests_comment {
+mod tests_tmp {
     use super::*;
 
     #[test]
-    fn pub_funcs() {
-        let start: &str = "##/";
-        let normal: &str = "# ";
-        let end: &str = "/##";
-        let cs = CommentStyle::new(start, normal, end);
-        assert_eq!(cs.start(), start);
-        assert_eq!(cs.normal(), normal);
-        assert_eq!(cs.end(), end);
+    fn tmp_file_from() {
+        let _tp: PathBuf = tmp_file_from_path(Path::new("src"));
     }
 }

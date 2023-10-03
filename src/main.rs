@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-09-30
-* Last updated: 2023-10-01
+* Last updated: 2023-10-02
 */
 
 use std::fs;
@@ -31,76 +31,19 @@ use std::{io, io::Write};
 
 use log::{error, info, warn};
 
-use text_io::read;
-
 use clap::Parser;
 
+mod args;
 mod comment;
+mod docstring;
 mod filetype;
+mod tmp;
 
+use args::Args;
 use comment::CommentStyle;
+use docstring::Docstring;
 use filetype::FileType;
-
-///
-#[derive(Parser, Debug)]
-#[command(author, version, about)]
-struct Args {
-    /// Name of the directory in which to create a file,
-    /// if it does not already exist, creates the directory.
-    #[arg(short = 'd', long = "directory", required = true)]
-    directory: String,
-
-    /// Name of the new file to create with docstring as
-    /// header. If it already exists, asks user whether
-    /// to prepend the docstring to the file.
-    #[arg(short = 'f', long = "file", required = true)]
-    file_name: String,
-
-    /// Relative path to the LICENSE file to use in header
-    /// docstring. If not specified, expects a LICENSE file
-    /// to exist in the current working directory.
-    #[arg(
-        short = 'l',
-        long = "license",
-        required = false,
-        default_value = "LICENSE"
-    )]
-    license: String,
-}
-
-/// If the user does not provide the required CLI arguments
-/// they will be prompted for them as the program is running.
-/// Returns the provided arguments as the `Args` struct.
-fn get_args_from_cli() -> Args {
-    info!("Please input the DIRECTORY to create docstring in: ");
-    let d: String = read!();
-
-    info!("Please input the NAME OF FILE to create docstring in: ");
-    let f: String = read!();
-
-    info!("Please input the PATH TO LICENSE FILE to include in docstring: ");
-    let l: String = read!();
-
-    Args {
-        directory: d,
-        file_name: f,
-        license: l,
-    }
-}
-
-///
-fn random_tmp_file_name<'a>() -> &'a str {
-    "hahahatmp.tmp"
-}
-
-///
-fn tmp_file_from_path(path: &Path) -> PathBuf {
-    let tmp_file_name: &str = random_tmp_file_name();
-    match path.parent() {
-        Some(p) => p.join(tmp_file_name),
-        None => PathBuf::from(tmp_file_name),
-    }
-}
+use tmp::tmp_file_from_path;
 
 ///
 fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
@@ -184,54 +127,6 @@ fn create_directory(dir: &Path) -> Result<(), io::Error> {
     Ok(())
 }
 
-///
-fn read_docstring_from_file(path: &Path) -> Result<String, io::Error> {
-    match fs::read_to_string(path) {
-        Ok(docstring) => {
-            info!("Read contents of `{}` successfully", &path.display());
-            Ok(docstring)
-        }
-        Err(e) => Err(e),
-    }
-}
-
-///
-fn format_docstring(contents: String, ft: FileType, created_date: &str) -> Vec<u8> {
-    let style = ft.get_comment_style();
-    let ml_start = style.start();
-    let ml_comment = style.normal();
-    let ml_end = style.end();
-
-    let mut docstring = String::new();
-    docstring.push_str(ml_start);
-    docstring.push('\n');
-
-    for line in contents.split('\n') {
-        docstring.push_str(ml_comment);
-        docstring.push_str(line);
-        docstring.push('\n');
-    }
-
-    docstring.push_str(ml_comment);
-    let local: String = chrono::Local::now().format("%Y-%m-%d").to_string();
-
-    docstring.push_str("File created: ");
-    docstring.push_str(created_date);
-    docstring.push('\n');
-    docstring.push_str(ml_comment);
-
-    let mut last_updated = String::new();
-    last_updated.push_str("Last updated: ");
-    last_updated.push_str(local.as_str());
-
-    docstring.push_str(last_updated.as_str());
-    docstring.push('\n');
-    docstring.push_str(ml_end);
-    docstring.push_str("\n\n");
-
-    docstring.as_bytes().to_vec()
-}
-
 fn main() -> Result<(), io::Error> {
     env_logger::init();
 
@@ -242,25 +137,13 @@ fn main() -> Result<(), io::Error> {
                 "Could not parse CLI args from std::env due to `{:?}`.",
                 e.kind()
             );
-            get_args_from_cli()
+            Args::try_from_user()
         }
     };
 
     let directory = Path::new(&args.directory);
     let file_name = Path::new(&args.file_name);
     let license = Path::new(&args.license);
-
-    let contents: String = match read_docstring_from_file(license) {
-        Ok(c) => c,
-        Err(e) => {
-            error!(
-                "Could not read contents from license file `{}` due to `{}`",
-                &license.display(),
-                e
-            );
-            return Err(e);
-        }
-    };
 
     let filetype: FileType = match FileType::try_from_filename(&args.file_name) {
         Ok(f) => f,
@@ -296,16 +179,25 @@ fn main() -> Result<(), io::Error> {
         };
     }
 
-    let binding = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let mut created: &str = binding.as_str();
-    if target_path.exists() {
+    let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
+    match docstring.try_read_license() {
+        Ok(_) => (),
+        Err(e) => return Err(e),
+    };
+
+    if docstring.target_exists() {
         warn!("Target file already exists, will prepend to top of file...");
-        let metadata = fs::metadata(target_path).unwrap();
-        let t_created: chrono::DateTime<chrono::Local> = metadata.created().unwrap().into();
-        let b_created = t_created.format("%Y-%m-%d").to_string();
-        created = b_created.as_str();
-        let docstring: Vec<u8> = format_docstring(contents, filetype, created);
-        match prepend_to_file(&docstring[..], target_path) {
+        match docstring.try_find_created_date() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+        match docstring.format_contents() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+
+        let contents = docstring.get_formatted_contents().unwrap();
+        match prepend_to_file(contents.as_bytes(), target_path) {
             Ok(_) => (),
             Err(e) => {
                 error!(
@@ -317,8 +209,13 @@ fn main() -> Result<(), io::Error> {
             }
         };
     } else {
-        let docstring: Vec<u8> = format_docstring(contents, filetype, created);
-        match add_to_new_file(&docstring[..], target_path) {
+        match docstring.format_contents() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+
+        let contents = docstring.get_formatted_contents().unwrap();
+        match add_to_new_file(contents.as_bytes(), target_path) {
             Ok(_) => (),
             Err(e) => {
                 error!(
