@@ -48,11 +48,11 @@ pub struct Docstring {
 ///
 impl Docstring {
     ///
-    pub fn new(target: PathBuf, license: PathBuf, file_type: FileType) -> Self {
+    pub fn new(target_path: PathBuf, license_path: PathBuf, file_type: FileType) -> Self {
         Self {
-            target_path: target,
-            license_path: license,
-            file_type: file_type,
+            target_path,
+            license_path,
+            file_type,
             contents: None,
             formatted_contents: None,
             file_created: None,
