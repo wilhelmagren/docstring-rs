@@ -34,20 +34,18 @@ use text_io::read;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Args {
-    /// Name of the directory in which to create a file,
+    /// Name of the directory in which to create new file or update existing files,
     /// if it does not already exist, creates the directory.
     #[arg(short = 'd', long = "directory", required = true)]
     pub directory: String,
 
-    /// Name of the new file to create with docstring as
-    /// header. If it already exists, asks user whether
-    /// to prepend the docstring to the file.
+    /// Name of a new file to create with docstring as header. Prepends to top of file
+    /// if the target file already exists.
     #[arg(short = 'f', long = "file", required = false, default_value = "*.*")]
     pub file_name: String,
 
-    /// Relative path to the LICENSE file to use in header docstring.
-    /// If not specified, expects a LICENSE file to exist in the
-    /// current working directory.
+    /// Relative path to the LICENSE file to use as header docstring. If not specified,
+    /// expects a LICENSE file to exist in the current working directory.
     #[arg(
         short = 'l',
         long = "license",
@@ -56,8 +54,8 @@ pub struct Args {
     )]
     pub license: String,
 
-    /// Specify whether or not to try and upate all avilable docstrings
-    /// in a directory recursively downwards.
+    /// Specify whether or not to try and update all available docstrings in a directory
+    /// recursively, requires <DIRECTORY> to have been set.
     #[arg(
         short = 'u',
         long = "update",
