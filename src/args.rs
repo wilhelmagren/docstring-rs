@@ -42,7 +42,7 @@ pub struct Args {
     /// Name of the new file to create with docstring as
     /// header. If it already exists, asks user whether
     /// to prepend the docstring to the file.
-    #[arg(short = 'f', long = "file", required = true)]
+    #[arg(short = 'f', long = "file", required = false, default_value = "*.*")]
     pub file_name: String,
 
     /// Relative path to the LICENSE file to use in header docstring.
@@ -55,10 +55,20 @@ pub struct Args {
         default_value = "LICENSE"
     )]
     pub license: String,
+
+    /// Specify whether or not to try and upate all avilable docstrings
+    /// in a directory recursively downwards.
+    #[arg(short = 'u', long = "update", required = false, requires = "directory", default_value = "false")]
+    pub update: bool,
 }
 
 ///
 impl Args {
+    pub fn get_filetype_from_user(&mut self) {
+        print!("Please input the file type to update: ");
+        let f: String = read!();
+        self.file_name = f;
+    }
     ///
     pub fn try_from_user() -> Self {
         print!("Please input the DIRECTORY PATH to create create/update file at: ");
@@ -74,17 +84,38 @@ impl Args {
             directory: d,
             file_name: f,
             license: l,
+            update: false,
         }
     }
 
-    #[allow(dead_code)]
+    pub fn try_dir_and_filetype_from_user() -> Self {
+        print!("Please input the DIRECTORY to start recursive update from: ");
+        let d: String = read!();
+        print!("Please input the FILETYPE (.rs, .py, ...) to update: ");
+        let f: String = read!();
+        print!("Please input reative path to the wanted LICENSE: ");
+        let l: String = read!();
+
+        Self {
+            directory: d,
+            file_name: f,
+            license: l,
+            update: true,
+        }
+    }
+
     ///
-    pub fn into_paths(&self) -> (PathBuf, PathBuf, PathBuf) {
+    pub fn paths(&self) -> (PathBuf, PathBuf, PathBuf) {
         (
             PathBuf::from(&self.directory),
             PathBuf::from(&self.file_name),
             PathBuf::from(&self.license),
         )
+    }
+
+    ///
+    pub fn update(&self) -> bool {
+        self.update
     }
 }
 
@@ -94,7 +125,7 @@ mod tests_args {
 
     #[test]
     #[should_panic]
-    fn try_parse() {
+    fn try_parse_panic() {
         Args::try_parse().unwrap();
     }
 
@@ -104,8 +135,9 @@ mod tests_args {
             directory: "src".into(),
             file_name: "nn.rs".into(),
             license: "LICENSE".into(),
+            update: false,
         };
-        let (d, f, l) = args.into_paths();
+        let (d, f, l) = args.paths();
         assert_eq!(PathBuf::from("src"), d);
         assert_eq!(PathBuf::from("nn.rs"), f);
         assert_eq!(PathBuf::from("LICENSE"), l);

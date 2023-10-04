@@ -33,6 +33,8 @@ use log::{error, info, warn};
 
 use clap::Parser;
 
+use glob::glob;
+
 mod args;
 mod comment;
 mod docstring;
@@ -78,12 +80,8 @@ fn remove_docstring_from_contents(c: Vec<u8>, cs: CommentStyle) -> Result<String
         num_chars += line.len() + 1;
     }
 
-    println!("{}, {}", ignore_span_start, ignore_span_end);
-
     let potential_start = &c[0..ignore_span_start];
-    println!("start: {}", potential_start);
     let part = &c[ignore_span_end..];
-    println!("part to keep: {}", part);
     let keep = potential_start.to_owned() + part;
 
     Ok(keep)
@@ -179,112 +177,162 @@ fn create_directory(dir: &Path) -> Result<(), io::Error> {
     Ok(())
 }
 
+fn update_directory_recursively(mut args: Args) -> Result<(), io::Error> {
+    if &args.file_name == "*.*" {
+        args.get_filetype_from_user();
+    };
+
+    let dir_start = Path::new(&args.directory);
+    let filetype = match FileType::try_from_filename(&args.file_name) {
+        Ok(ft) => ft,
+        Err(e) => return Err(e),
+    };
+    let license = Path::new(&args.license);
+
+    for file_ending in filetype.file_endings() {
+        let files = match glob(format!("./{}/**/*.{}", &dir_start.display(), file_ending).as_str()) {
+            Ok(f) => f,
+            Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not glob directory and file type")),
+        };
+        for file in files {
+            let target_path = match file {
+                Ok(f) => f,
+                Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not glob directory and file type")),
+            };
+            let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
+            match docstring.try_read_license() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+            match docstring.try_find_created_date() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+            match docstring.format_contents() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+            let contents = docstring.get_formatted_contents().unwrap();
+            match update_existing_file(contents.as_bytes(), Path::new(&target_path), filetype) {
+                Ok(_) => (),
+                Err(e) => {
+                    error!(
+                        "Could not prepend docstring to the file `{}` due to `{:?}`",
+                        &target_path.display(),
+                        e
+                    );
+                    return Err(e);
+                }
+            };
+        };
+    };
+
+    Ok(())
+}
+
 fn main() -> Result<(), io::Error> {
     env_logger::init();
 
-    let args = match Args::try_parse() {
-        Ok(a) => a,
-        Err(e) => {
-            warn!(
-                "Could not parse CLI args from std::env due to `{:?}`.",
-                e.kind()
-            );
-            Args::try_from_user()
-        }
-    };
-
-    let directory = Path::new(&args.directory);
-    let file_name = Path::new(&args.file_name);
-    let license = Path::new(&args.license);
-
-    let filetype: FileType = match FileType::try_from_filename(&args.file_name) {
-        Ok(f) => f,
-        Err(e) => {
-            error!(
-                "Could not find a filetype in the filename: `{}` due to `{}`",
-                &file_name.display(),
-                e
-            );
-            return Err(e);
-        }
-    };
-
-    let path_builder: PathBuf = directory.join(file_name);
-    let target_path = Path::new(&path_builder);
-
-    if !directory.exists() {
-        info!(
-            "Directory `{}` does not already exist, creating it...",
-            &directory.display()
-        );
-
-        match create_directory(directory) {
-            Ok(()) => info!("Successfully created directory!"),
-            Err(e) => {
-                error!(
-                    "Could not create directory `{}` due to `{:?}`",
-                    &directory.display(),
-                    e
-                );
-                return Err(e);
-            }
-        };
-    }
-
-    let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
-    match docstring.try_read_license() {
-        Ok(_) => (),
-        Err(e) => return Err(e),
-    };
-
-    if docstring.target_exists() {
-        warn!("Target file already exists, will prepend to top of file...");
-        match docstring.try_find_created_date() {
-            Ok(_) => (),
+    let args = Args::parse();
+    
+    if args.update() {
+        match update_directory_recursively(args) {
+            Ok(_) => return Ok(()),
             Err(e) => return Err(e),
-        };
-        match docstring.format_contents() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
-
-        let contents = docstring.get_formatted_contents().unwrap();
-        match update_existing_file(contents.as_bytes(), target_path, filetype) {
-            Ok(_) => (),
-            Err(e) => {
-                error!(
-                    "Could not prepend docstring to the file `{}` due to `{:?}`",
-                    &target_path.display(),
-                    e
-                );
-                return Err(e);
-            }
-        };
+        }
     } else {
-        match docstring.format_contents() {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
+        let args = Args::try_from_user();
 
-        let contents = docstring.get_formatted_contents().unwrap();
-        match add_to_new_file(contents.as_bytes(), target_path) {
-            Ok(_) => (),
+        let (d, f, l) = args.paths();
+        let directory = Path::new(&d);
+        let file_name = Path::new(&f);
+        let license = Path::new(&l);
+
+        let filetype: FileType = match FileType::try_from_filename(&args.file_name) {
+            Ok(f) => f,
             Err(e) => {
                 error!(
-                    "Could not add docstring to the file `{}` due to `{:?}`",
-                    &target_path.display(),
+                    "Could not find a filetype in the filename: `{}` due to `{}`",
+                    &file_name.display(),
                     e
                 );
                 return Err(e);
             }
-        }
-    }
+        };
 
-    info!(
-        "⚡Successfully created/updated docstring from `{}` in file `{}`!⚡",
-        &license.display(),
-        &target_path.display(),
-    );
+        let path_builder: PathBuf = directory.join(file_name);
+        let target_path = Path::new(&path_builder);
+
+        if !directory.exists() {
+            info!(
+                "Directory `{}` does not already exist, creating it...",
+                &directory.display()
+            );
+
+            match create_directory(directory) {
+                Ok(()) => info!("Successfully created directory!"),
+                Err(e) => {
+                    error!(
+                        "Could not create directory `{}` due to `{:?}`",
+                        &directory.display(),
+                        e
+                    );
+                    return Err(e);
+                }
+            };
+        }
+
+        let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
+        match docstring.try_read_license() {
+            Ok(_) => (),
+            Err(e) => return Err(e),
+        };
+
+        if docstring.target_exists() {
+            warn!("Target file already exists, will prepend to top of file...");
+            match docstring.try_find_created_date() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+            match docstring.format_contents() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+
+            let contents = docstring.get_formatted_contents().unwrap();
+            match update_existing_file(contents.as_bytes(), target_path, filetype) {
+                Ok(_) => (),
+                Err(e) => {
+                    error!(
+                        "Could not prepend docstring to the file `{}` due to `{:?}`",
+                        &target_path.display(),
+                        e
+                    );
+                    return Err(e);
+                }
+            };
+        } else {
+            match docstring.format_contents() {
+                Ok(_) => (),
+                Err(e) => return Err(e),
+            };
+
+            let contents = docstring.get_formatted_contents().unwrap();
+            match add_to_new_file(contents.as_bytes(), target_path) {
+                Ok(_) => (),
+                Err(e) => {
+                    error!(
+                        "Could not add docstring to the file `{}` due to `{:?}`",
+                        &target_path.display(),
+                        e
+                    );
+                    return Err(e);
+                }
+            }
+        }
+    };
+
+    info!("⚡Successfully created/updated docstrings!⚡");
 
     Ok(())
 }
