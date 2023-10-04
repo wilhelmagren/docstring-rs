@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-02
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use crate::FileType;
@@ -82,12 +82,10 @@ impl Docstring {
             Err(e) => return Err(e),
         };
 
-        let re = Regex::new(r"\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*")
+        let re = Regex::new(r"\d{4}\-(0?[1-9]|1[012])\-(0?[0-9]|[12][0-9]|3[01])*")
             .expect("could not compile regex");
         for line in fc.split('\n') {
             if line.contains("File created: ") {
-                println!("{:?}", line);
-                println!("{:?}", re.find(line));
                 let date: String = match re.find(line) {
                     Some(d) => d.as_str().to_owned(),
                     None => {
@@ -171,7 +169,7 @@ impl Docstring {
 
         // end the multiline comment
         formatted.push_str(end);
-        formatted.push_str("\n\n");
+        formatted.push('\n');
 
         self.formatted_contents = Some(formatted);
 

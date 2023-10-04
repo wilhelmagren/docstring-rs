@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-02
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use std::path::{Path, PathBuf};
@@ -52,6 +52,6 @@ mod tests_tmp {
 
     #[test]
     fn tmp_file_from() {
-        let _tp: PathBuf = tmp_file_from_path(Path::new("src"));
+        let _tp: PathBuf = tmp_file_from_path(Path::new("src".into()));
     }
 }

@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-02
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use std::path::PathBuf;
@@ -34,20 +34,18 @@ use text_io::read;
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Args {
-    /// Name of the directory in which to create a file,
+    /// Name of the directory in which to create new file or update existing files,
     /// if it does not already exist, creates the directory.
     #[arg(short = 'd', long = "directory", required = true)]
     pub directory: String,
 
-    /// Name of the new file to create with docstring as
-    /// header. If it already exists, asks user whether
-    /// to prepend the docstring to the file.
-    #[arg(short = 'f', long = "file", required = true)]
+    /// Name of a new file to create with docstring as header. Prepends to top of file
+    /// if the target file already exists.
+    #[arg(short = 'f', long = "file", required = false, default_value = "*.*")]
     pub file_name: String,
 
-    /// Relative path to the LICENSE file to use in header docstring.
-    /// If not specified, expects a LICENSE file to exist in the
-    /// current working directory.
+    /// Relative path to the LICENSE file to use as header docstring. If not specified,
+    /// expects a LICENSE file to exist in the current working directory.
     #[arg(
         short = 'l',
         long = "license",
@@ -55,10 +53,26 @@ pub struct Args {
         default_value = "LICENSE"
     )]
     pub license: String,
+
+    /// Specify whether or not to try and update all available docstrings in a directory
+    /// recursively, requires <DIRECTORY> to have been set.
+    #[arg(
+        short = 'u',
+        long = "update",
+        required = false,
+        requires = "directory",
+        default_value = "false"
+    )]
+    pub update: bool,
 }
 
 ///
 impl Args {
+    pub fn get_filetype_from_user(&mut self) {
+        print!("Please input the file type to update: ");
+        let f: String = read!();
+        self.file_name = f;
+    }
     ///
     pub fn try_from_user() -> Self {
         print!("Please input the DIRECTORY PATH to create create/update file at: ");
@@ -74,10 +88,10 @@ impl Args {
             directory: d,
             file_name: f,
             license: l,
+            update: false,
         }
     }
 
-    #[allow(dead_code)]
     ///
     pub fn paths(&self) -> (PathBuf, PathBuf, PathBuf) {
         (
@@ -85,6 +99,11 @@ impl Args {
             PathBuf::from(&self.file_name),
             PathBuf::from(&self.license),
         )
+    }
+
+    ///
+    pub fn update(&self) -> bool {
+        self.update
     }
 }
 
@@ -94,7 +113,7 @@ mod tests_args {
 
     #[test]
     #[should_panic]
-    fn try_parse() {
+    fn try_parse_panic() {
         Args::try_parse().unwrap();
     }
 
@@ -104,6 +123,7 @@ mod tests_args {
             directory: "src".into(),
             file_name: "nn.rs".into(),
             license: "LICENSE".into(),
+            update: false,
         };
         let (d, f, l) = args.paths();
         assert_eq!(PathBuf::from("src"), d);

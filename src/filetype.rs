@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-01
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use std::collections::HashMap;
@@ -262,6 +262,44 @@ impl fmt::Display for FileType {
 
 ///
 impl FileType {
+    ///
+    pub fn file_endings(&self) -> Vec<&str> {
+        use filetype::FileType::*;
+        match self {
+            C => vec!["c"],
+            CPP => vec!["cc", "cpp", "cxx"],
+            CSharp => vec!["cs"],
+            Cython => vec!["pyx"],
+            Elixir => vec!["ex", "exs"],
+            Erlang => vec!["erl", "hrl"],
+            FSharp => vec!["fs", "fsi", "fsx", "fsscript"],
+            Go => vec!["go"],
+            Haskell => vec!["hs", "lhs"],
+            HolyC => vec!["HC"],
+            Java => vec!["java"],
+            JavaScript => vec!["js"],
+            Julia => vec!["jl"],
+            Kotlin => vec!["kt", "kts"],
+            Lisp => vec!["lisp", "lsp", "l", "cl", "fasl"],
+            Lua => vec!["lua"],
+            Perl => vec!["plx", "pm", "xs", "t", "pod", "cgi"],
+            PHP => vec!["php", "phar", "phtml", "pht", "phps"],
+            PowerShell => vec!["ps1", "psc1", "pssc"],
+            Prolog => vec!["pl", "pro", "P"],
+            Python => vec!["py", "pyi", "pyc", "pyd", "pyw", "pyz"],
+            QSharp => vec!["qs"],
+            R => vec!["r", "rdata", "rds"],
+            Ruby => vec!["rb"],
+            Rust => vec!["rs"],
+            Scala => vec!["scala", "sc"],
+            Swift => vec!["swift", "SWIFT"],
+            TypeScript => vec!["ts", "tsx", "mts", "cts"],
+            Vim => vec!["vim"],
+            Zig => vec!["zig", "zir"],
+        }
+    }
+
+    ///
     pub fn try_from_filename(fname: &str) -> Result<FileType, io::Error> {
         let fe: &str = match fname.split('.').last() {
             Some(e) => e,
