@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-09-30
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use std::fs;
@@ -71,11 +71,9 @@ fn remove_docstring_from_contents(c: Vec<u8>, cs: CommentStyle) -> Result<String
                 has_started = true;
                 ignore_span_start = num_chars;
             }
-        } else {
-            if line.starts_with(end) {
-                ignore_span_end = num_chars + line.len() + 3;
-                break;
-            }
+        } else if line.starts_with(end) {
+            ignore_span_end = num_chars + line.len() + 1;
+            break;
         }
         num_chars += line.len() + 1;
     }
@@ -190,16 +188,28 @@ fn update_directory_recursively(mut args: Args) -> Result<(), io::Error> {
     let license = Path::new(&args.license);
 
     for file_ending in filetype.file_endings() {
-        let files = match glob(format!("./{}/**/*.{}", &dir_start.display(), file_ending).as_str()) {
+        let files = match glob(format!("./{}/**/*.{}", &dir_start.display(), file_ending).as_str())
+        {
             Ok(f) => f,
-            Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not glob directory and file type")),
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "Could not glob directory and file type",
+                ))
+            }
         };
         for file in files {
             let target_path = match file {
                 Ok(f) => f,
-                Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData, "Could not glob directory and file type")),
+                Err(_) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "Could not glob directory and file type",
+                    ))
+                }
             };
-            let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
+            let mut docstring =
+                Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
             match docstring.try_read_license() {
                 Ok(_) => (),
                 Err(e) => return Err(e),
@@ -224,8 +234,9 @@ fn update_directory_recursively(mut args: Args) -> Result<(), io::Error> {
                     return Err(e);
                 }
             };
-        };
-    };
+            println!("Updated `{}`", &target_path.display());
+        }
+    }
 
     Ok(())
 }
@@ -234,7 +245,7 @@ fn main() -> Result<(), io::Error> {
     env_logger::init();
 
     let args = Args::parse();
-    
+
     if args.update() {
         match update_directory_recursively(args) {
             Ok(_) => return Ok(()),
@@ -282,7 +293,8 @@ fn main() -> Result<(), io::Error> {
             };
         }
 
-        let mut docstring = Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
+        let mut docstring =
+            Docstring::new(target_path.to_path_buf(), license.to_path_buf(), filetype);
         match docstring.try_read_license() {
             Ok(_) => (),
             Err(e) => return Err(e),

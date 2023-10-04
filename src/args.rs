@@ -22,7 +22,7 @@
 * SOFTWARE.
 *
 * File created: 2023-10-02
-* Last updated: 2023-10-02
+* Last updated: 2023-10-04
 */
 
 use std::path::PathBuf;
@@ -58,7 +58,13 @@ pub struct Args {
 
     /// Specify whether or not to try and upate all avilable docstrings
     /// in a directory recursively downwards.
-    #[arg(short = 'u', long = "update", required = false, requires = "directory", default_value = "false")]
+    #[arg(
+        short = 'u',
+        long = "update",
+        required = false,
+        requires = "directory",
+        default_value = "false"
+    )]
     pub update: bool,
 }
 
@@ -85,22 +91,6 @@ impl Args {
             file_name: f,
             license: l,
             update: false,
-        }
-    }
-
-    pub fn try_dir_and_filetype_from_user() -> Self {
-        print!("Please input the DIRECTORY to start recursive update from: ");
-        let d: String = read!();
-        print!("Please input the FILETYPE (.rs, .py, ...) to update: ");
-        let f: String = read!();
-        print!("Please input reative path to the wanted LICENSE: ");
-        let l: String = read!();
-
-        Self {
-            directory: d,
-            file_name: f,
-            license: l,
-            update: true,
         }
     }
 
