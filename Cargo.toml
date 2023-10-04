@@ -1,6 +1,6 @@
 [package]
 name = "docstring-rs"
-version = "0.2.1"
+version = "0.3.0"
 authors = [ "Wilhelm Ågren <wilhelmagren98@gmail.com>" ]
 description = "📒 Generate or update docstrings for new and existing files. "
 readme = "README.md"
