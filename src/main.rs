@@ -45,8 +45,52 @@ use docstring::Docstring;
 use filetype::FileType;
 use tmp::tmp_file_from_path;
 
+fn remove_docstring_from_contents(c: Vec<u8>, cs: CommentStyle) -> Result<String, io::Error> {
+    let c: String = match String::from_utf8(c) {
+        Ok(c) => c,
+        Err(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Could not create String from Vec<u8>",
+            ))
+        }
+    };
+
+    let start = cs.start();
+    let end = cs.end();
+
+    let mut has_started: bool = false;
+    let mut ignore_span_start: usize = 0;
+    let mut ignore_span_end: usize = 0;
+    let mut num_chars = 0;
+    for line in c.split('\n') {
+        if !has_started {
+            if line.starts_with(start) {
+                has_started = true;
+                ignore_span_start = num_chars;
+            }
+        } else {
+            if line.starts_with(end) {
+                ignore_span_end = num_chars + line.len() + 3;
+                break;
+            }
+        }
+        num_chars += line.len() + 1;
+    }
+
+    println!("{}, {}", ignore_span_start, ignore_span_end);
+
+    let potential_start = &c[0..ignore_span_start];
+    println!("start: {}", potential_start);
+    let part = &c[ignore_span_end..];
+    println!("part to keep: {}", part);
+    let keep = potential_start.to_owned() + part;
+
+    Ok(keep)
+}
+
 ///
-fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
+fn update_existing_file(data: &[u8], path: &Path, ft: FileType) -> Result<(), io::Error> {
     let tmp_path: PathBuf = tmp_file_from_path(path);
     match fs::write(&tmp_path, data) {
         Ok(_) => info!(
@@ -64,6 +108,13 @@ fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
         Err(e) => return Err(e),
     };
 
+    let c_string = match remove_docstring_from_contents(contents, ft.get_comment_style()) {
+        Ok(c) => c,
+        Err(e) => return Err(e),
+    };
+
+    let contents = c_string.as_bytes();
+
     let mut tmp = match fs::OpenOptions::new().append(true).open(&tmp_path) {
         Ok(f) => {
             info!("Opened `{}` with append mode", &tmp_path.display());
@@ -72,9 +123,9 @@ fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
         Err(e) => return Err(e),
     };
 
-    match tmp.write_all(&contents[..]) {
+    match tmp.write_all(contents) {
         Ok(_) => info!(
-            "Wrote contents from `{}` to `{}`",
+            "Updated contents from `{}` to `{}`",
             &path.display(),
             &tmp_path.display()
         ),
@@ -95,6 +146,7 @@ fn prepend_to_file(data: &[u8], path: &Path) -> Result<(), io::Error> {
         Err(e) => return Err(e),
     };
 
+    info!("Updated docstring at: `{}`", &path.display());
     Ok(())
 }
 
@@ -197,7 +249,7 @@ fn main() -> Result<(), io::Error> {
         };
 
         let contents = docstring.get_formatted_contents().unwrap();
-        match prepend_to_file(contents.as_bytes(), target_path) {
+        match update_existing_file(contents.as_bytes(), target_path, filetype) {
             Ok(_) => (),
             Err(e) => {
                 error!(
@@ -229,7 +281,7 @@ fn main() -> Result<(), io::Error> {
     }
 
     info!(
-        "⚡Successfully created docstring from `{}` at top of file `{}`!⚡",
+        "⚡Successfully created/updated docstring from `{}` in file `{}`!⚡",
         &license.display(),
         &target_path.display(),
     );
